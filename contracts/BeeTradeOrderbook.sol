@@ -18,28 +18,28 @@ contract BeeTradeOrderbook {
     mapping (address => mapping (address => Balance)) public tokensBalances; // mapping of token addresses to mapping of account balances (token=0 means Ether)
     mapping (address => mapping(string => bool)) public usersOrders; // mapping of users addresses to ordersID's
 
-    event Deposit(address indexed token, address indexed user, uint256 amount);
-    event Withdraw(address indexed token, address indexed user, uint256 amount);
+    event Deposit(address token, address user, uint256 amount);
+    event Withdraw(address token, address user, uint256 amount);
     event CreateOrder(
-        address indexed account, 
+        address account, 
         uint256 amount, 
         string buySell, 
         string date, 
         string orderType, 
-        string indexed pair, 
+        string pair, 
         uint256 price, 
-        string indexed orderID
+        string orderID
     );
-    event CancelOrder(address user, string indexed pair, string indexed orderType, string indexed orderID);
+    event CancelOrder(address user, string pair, string orderType, string orderID);
     
     event Trade(
-        address indexed maker,
-        address indexed taker,
+        address maker,
+        address taker,
         uint256 amountGet, 
         uint256 amountGive,
         string makeOrderID,
         string takeOrderID,
-        string indexed pair,
+        string pair,
         uint256 price
     );
 
