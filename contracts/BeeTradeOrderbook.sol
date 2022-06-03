@@ -20,8 +20,17 @@ contract BeeTradeOrderbook {
 
     event Deposit(address indexed token, address indexed user, uint256 amount);
     event Withdraw(address indexed token, address indexed user, uint256 amount);
-    event CreateOrder(string indexed orderID);
-    event CancelOrder(string indexed orderID);
+    event CreateOrder(
+        address indexed account, 
+        uint256 amount, 
+        string buySell, 
+        string date, 
+        string orderType, 
+        string indexed pair, 
+        uint256 price, 
+        string indexed orderID
+    );
+    event CancelOrder(address user, string indexed pair, string indexed orderType, string indexed orderID);
     
     event Trade(
         address indexed maker,
@@ -110,29 +119,38 @@ contract BeeTradeOrderbook {
         return ((_amount * fee) / (100 * 1e18));
     }
 
-    function createOrder(string memory orderID, uint256 _amount, address _token) external returns(bool){
+    function createOrder(
+        uint256 _amount, 
+        string memory _buySell, 
+        string memory _date, 
+        string memory _orderType, 
+        string memory _pair, 
+        uint256 _price, 
+        string memory _orderID, 
+        address _token
+    ) external returns(bool){
         // make sure user has the required token balance
         require(tokensBalances[_token][msg.sender].available >= _amount, "Beetrade Insufficient Balance");
         // move from available to locked balance
         tokensBalances[_token][msg.sender].available -= _amount;
         tokensBalances[_token][msg.sender].locked += _amount;
-        usersOrders[msg.sender][orderID] = true;
+        usersOrders[msg.sender][_orderID] = true;
 
-        emit CreateOrder(orderID);
+        emit CreateOrder(msg.sender, _amount, _buySell, _date, _orderType, _pair, _price, _orderID);
         return true;
     }
 
-    function cancelOrder(string memory orderID, uint256 _amount, address _token) external returns(bool){
+    function cancelOrder(string memory _pair, string memory _orderType, string memory _orderID, uint256 _amount, address _token) external returns(bool){
         // make sure the user has the required order balance
         require(tokensBalances[_token][msg.sender].locked >= _amount, "Beetrade Insufficient Balance");
         // make sure order is still valid
-        require(usersOrders[msg.sender][orderID] == true, "Beetrade Order Not Valid");
+        require(usersOrders[msg.sender][_orderID] == true, "Beetrade Order Not Valid");
         // move from locked balance to available
         tokensBalances[_token][msg.sender].locked -= _amount;
         tokensBalances[_token][msg.sender].available += _amount;
-        usersOrders[msg.sender][orderID] = false;
+        usersOrders[msg.sender][_orderID] = false;
 
-        emit CancelOrder(orderID);
+        emit CancelOrder(msg.sender, _pair, _orderType, _orderType);
         return true;
     }
 
@@ -159,14 +177,14 @@ contract BeeTradeOrderbook {
         // subtract from takers balance and add to makers balance for tokenGet
         tokensBalances[tokenGet][taker].locked -= amountGet;
         tokensBalances[tokenGet][maker].available += (amountGet - makerFee);
-        tokensBalances[tokenGet][tradesAccount].available += makerFee; //charge trade fees
+        tokensBalances[tokenGet][feesAccount].available += makerFee; //charge trade fees
 
         // subtract from the makers balance and add to takers balance for tokenGive
         tokensBalances[tokenGive][maker].locked -=  amountGive;
         tokensBalances[tokenGive][taker].available += (amountGive - takerFee);
-        tokensBalances[tokenGive][tradesAccount].available += takerFee;
+        tokensBalances[tokenGive][feesAccount].available += takerFee; // charge trade fees
 
-        emit Trade(maker, taker, amountGet, amountGive, makeOrderID, takeOrderID, pair, price); // charge trade fees
+        emit Trade(maker, taker, amountGet, amountGive, makeOrderID, takeOrderID, pair, price);
     }
 
     
